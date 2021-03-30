@@ -21,6 +21,11 @@ from sklearn.metrics import confusion_matrix
 df_fake = pd.read_csv("input/Fake.csv")
 df_true = pd.read_csv("input/True.csv")
 
+df_true['target'] = 1
+df_fake['target'] = 0
+df = pd.concat([df_true, df_fake]).reset_index(drop=True)
+df['original'] = df['title'] + ' ' + df['text']
+print(df.head())
 
 
 
