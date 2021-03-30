@@ -43,7 +43,22 @@ df.subject=df.subject.replace({'politics':'PoliticsNews','politicsNews':'Politic
 df['clean_title'] = df['title'].apply(preprocess)
 df['clean_joined_title']=df['clean_title'].apply(lambda x:" ".join(x))
 
+X_train, X_test, y_train, y_test = train_test_split(df.clean_joined_title, df.target, test_size = 0.25,random_state=2)
+vec_train = CountVectorizer().fit(X_train)
+X_vec_train = vec_train.transform(X_train)
+X_vec_test = vec_train.transform(X_test)
 
+model = LogisticRegression(C=2)
+model.fit(X_vec_train, y_train)
+predicted_value = model.predict(X_vec_test)
+accuracy_value = roc_auc_score(y_test, predicted_value)
+print(accuracy_value)
+
+cm = confusion_matrix(list(y_test), predicted_value)
+plt.figure(figsize = (10, 10))
+sns.heatmap(cm, annot = True,fmt='g',cmap='viridis')
+
+plt.show()
 
 
 
