@@ -10,6 +10,7 @@ import seaborn as sns
 import gensim
 from gensim.utils import simple_preprocess
 from gensim.parsing.preprocessing import STOPWORDS
+import pickle
 
 import plotly.express as px
 from sklearn.model_selection import train_test_split
@@ -17,6 +18,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import confusion_matrix
+import joblib
 
 
 def preprocess(text):
@@ -40,31 +42,20 @@ stop_words.extend(['from', 'subject', 're', 'edu', 'use'])
 
 df.subject=df.subject.replace({'politics':'PoliticsNews','politicsNews':'PoliticsNews'})
 
-df['clean_title'] = df['title'].apply(preprocess)
-df['clean_joined_title']=df['clean_title'].apply(lambda x:" ".join(x))
+df['clean_final'] = df['original'].apply(preprocess)
+df['clean_joined_final']=df['clean_final'].apply(lambda x:" ".join(x))
 
-df['clean_text'] = df['text'].apply(preprocess)
-df['clean_joined_text']=df['clean_text'].apply(lambda x:" ".join(x))
-
-X_train, X_test, y_train, y_test = train_test_split(df.clean_joined_text, df.target, test_size = 0.25,random_state=2)
+X_train, X_test, y_train, y_test = train_test_split(df.clean_joined_final, df.target, test_size = 0.25,random_state=0)
 vec_train = CountVectorizer().fit(X_train)
 X_vec_train = vec_train.transform(X_train)
 X_vec_test = vec_train.transform(X_test)
-model = LogisticRegression(C=2.5)
+model = LogisticRegression(C=3)
 model.fit(X_vec_train, y_train)
 predicted_value = model.predict(X_vec_test)
 accuracy_value = roc_auc_score(y_test, predicted_value)
-print(accuracy_value)
 
-prediction = []
-for i in range(len(predicted_value)):
-    if predicted_value[i].item() > 0.5:
-        prediction.append(1)
-    else:
-        prediction.append(0)
-cm = confusion_matrix(list(y_test), prediction)
-plt.figure(figsize = (10, 10))
-sns.heatmap(cm, annot = True,fmt='g')
-plt.show()
+filename = 'fake_news_model.pkl'
+joblib.dump(model, filename)
+
 
 
