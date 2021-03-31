@@ -20,35 +20,35 @@ def preprocess(text):
 
     return result
 
+if __name__ == '__main__':
+    df_fake = pd.read_csv("input/Fake.csv")
+    df_true = pd.read_csv("input/True.csv")
 
-df_fake = pd.read_csv("input/Fake.csv")
-df_true = pd.read_csv("input/True.csv")
+    df_true["target"] = 1
+    df_fake["target"] = 0
+    df = pd.concat([df_true, df_fake]).reset_index(drop=True)
+    df["original"] = df["title"] + " " + df["text"]
 
-df_true["target"] = 1
-df_fake["target"] = 0
-df = pd.concat([df_true, df_fake]).reset_index(drop=True)
-df["original"] = df["title"] + " " + df["text"]
+    stop_words = stopwords.words("english")
+    stop_words.extend(["from", "subject", "re", "edu", "use"])
 
-stop_words = stopwords.words("english")
-stop_words.extend(["from", "subject", "re", "edu", "use"])
+    df.subject = df.subject.replace(
+        {"politics": "PoliticsNews", "politicsNews": "PoliticsNews"}
+    )
 
-df.subject = df.subject.replace(
-    {"politics": "PoliticsNews", "politicsNews": "PoliticsNews"}
-)
+    df["clean_final"] = df["original"].apply(preprocess)
+    df["clean_joined_final"] = df["clean_final"].apply(lambda x: " ".join(x))
 
-df["clean_final"] = df["original"].apply(preprocess)
-df["clean_joined_final"] = df["clean_final"].apply(lambda x: " ".join(x))
+    X_train, X_test, y_train, y_test = train_test_split(
+        df.clean_joined_final, df.target, test_size=0.25, random_state=0
+    )
+    vec_train = CountVectorizer().fit(X_train)
+    X_vec_train = vec_train.transform(X_train)
+    X_vec_test = vec_train.transform(X_test)
+    model = LogisticRegression(C=3)
+    model.fit(X_vec_train, y_train)
+    predicted_value = model.predict(X_vec_test)
+    accuracy_value = roc_auc_score(y_test, predicted_value)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    df.clean_joined_final, df.target, test_size=0.25, random_state=0
-)
-vec_train = CountVectorizer().fit(X_train)
-X_vec_train = vec_train.transform(X_train)
-X_vec_test = vec_train.transform(X_test)
-model = LogisticRegression(C=3)
-model.fit(X_vec_train, y_train)
-predicted_value = model.predict(X_vec_test)
-accuracy_value = roc_auc_score(y_test, predicted_value)
-
-filename = "fake_news_model.pkl"
-joblib.dump(model, filename)
+    filename = "fake_news_model.pkl"
+    joblib.dump(model, filename)
